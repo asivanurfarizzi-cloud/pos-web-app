@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NexPOS | Premium Point of Sale</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* ================= CSS VARIABLES (DARK MODE DEFAULT) ================= */
+        :root {
+            --bg-dark: #0f1115;
+            --bg-panel: rgba(28, 31, 38, 0.7);
+            --bg-card: rgba(39, 43, 52, 0.5);
+            --bg-hover: rgba(56, 189, 248, 0.1);
+            --primary: #38bdf8;
+            --primary-glow: rgba(56, 189, 248, 0.4);
+            --accent: #818cf8;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --text-inverse: #0f1115;
+            --border: rgba(255, 255, 255, 0.08);
+            --border-highlight: rgba(255, 255, 255, 0.15);
+            --glass-blur: blur(16px);
+            --shadow-float: 0 20px 40px rgba(0,0,0,0.4);
+        }
+
+        /* ================= CSS VARIABLES (LIGHT MODE) ================= */
+        [data-theme="light"] {
+            --bg-dark: #f1f5f9;
+            --bg-panel: rgba(255, 255, 255, 0.8);
+            --bg-card: rgba(255, 255, 255, 0.95);
+            --bg-hover: rgba(2, 132, 199, 0.1);
+            --primary: #0284c7; /* Biru yang lebih gelap agar kontras di latar putih */
+            --primary-glow: rgba(2, 132, 199, 0.2);
+            --accent: #4f46e5;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --text-inverse: #ffffff;
+            --border: rgba(0, 0, 0, 0.08);
+            --border-highlight: rgba(0, 0, 0, 0.15);
+            --shadow-float: 0 10px 30px rgba(0,0,0,0.05);
+        }
+
+        /* ================= GLOBAL STYLES ================= */
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+        body { background-color: var(--bg-dark); color: var(--text-main); height: 100vh; overflow: hidden; display: flex; font-size: 14px; background-image: radial-gradient(circle at 15% 50%, rgba(56, 189, 248, 0.05), transparent 25%), radial-gradient(circle at 85% 30%, rgba(129, 140, 248, 0.05), transparent 25%); transition: background-color 0.4s, color 0.4s; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(150,150,150,0.3); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(150,150,150,0.5); }
+
+        .app-container { display: flex; width: 100%; height: 100%; padding: 16px; gap: 16px; }
+
+        /* ================= SIDEBAR NAV ================= */
+        .sidebar { width: 80px; background: var(--bg-panel); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur); border: 1px solid var(--border); border-radius: 24px; display: flex; flex-direction: column; align-items: center; padding: 24px 0; gap: 30px; box-shadow: var(--shadow-float); z-index: 100; transition: 0.4s; }
+        .logo { width: 40px; height: 40px; background: linear-gradient(135deg, var(--primary), var(--accent)); border-radius: 12px; display: flex; justify-content: center; align-items: center; font-weight: 800; font-size: 1.2rem; color: var(--text-inverse); box-shadow: 0 0 15px var(--primary-glow); }
+        .nav-item { width: 48px; height: 48px; border-radius: 14px; display: flex; justify-content: center; align-items: center; cursor: pointer; transition: 0.3s; color: var(--text-muted); font-size: 1.2rem; position: relative; }
+        .nav-item.active { background: var(--bg-hover); color: var(--primary); box-shadow: inset 0 0 0 1px var(--primary-glow); }
+        .nav-item:hover:not(.active) { background: rgba(150,150,150,0.1); color: var(--text-main); }
+        .nav-item::after { content: attr(data-tooltip); position: absolute; left: 60px; background: var(--bg-card); color: var(--text-main); padding: 6px 12px; border-radius: 8px; font-size: 0.8rem; white-space: nowrap; opacity: 0; pointer-events: none; transition: 0.3s; border: 1px solid var(--border); backdrop-filter: var(--glass-blur); }
+        .nav-item:hover::after { opacity: 1; transform: translateX(5px); }
+        .mt-auto { margin-top: auto; }
+
+        /* ================= VIEW CONTAINER ================= */
+        .content-area { flex: 1; position: relative; overflow: hidden; }
+        .view-section { display: none; width: 100%; height: 100%; animation: fadeSlideUp 0.4s ease-out forwards; flex-direction: row; gap: 16px; }
+        .view-section.active { display: flex; }
+        @keyframes fadeSlideUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .generic-view { flex: 1; background: var(--bg-panel); backdrop-filter: var(--glass-blur); border: 1px solid var(--border); border-radius: 24px; padding: 30px; overflow-y: auto; display: flex; flex-direction: column; gap: 24px; transition: 0.4s; }
+        .view-title { font-size: 1.8rem; font-weight: 700; margin-bottom: 10px; }
+
+        /* ================= KASIR & LAINNYA ================= */
+        .main-area { flex: 1; display: flex; flex-direction: column; gap: 20px; overflow: hidden; }
+        .top-header { display: flex; justify-content: space-between; align-items: center; background: var(--bg-panel); backdrop-filter: var(--glass-blur); border: 1px solid var(--border); padding: 16px 24px; border-radius: 24px; transition: 0.4s; }
+        .greeting h1 { font-size: 1.4rem; font-weight: 700; }
+        .greeting p { color: var(--text-muted); font-size: 0.9rem; margin-top: 2px; }
+        .search-bar { display: flex; align-items: center; background: rgba(150,150,150,0.1); border: 1px solid var(--border); padding: 10px 16px; border-radius: 12px; width: 300px; transition: 0.3s; }
+        .search-bar:focus-within { border-color: var(--primary); box-shadow: 0 0 0 2px var(--primary-glow); }
+        .search-bar input { background: transparent; border: none; outline: none; color: var(--text-main); width: 100%; margin-left: 10px; font-size: 0.95rem; }
+        .categories { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 5px; }
+        .cat-btn { padding: 10px 20px; border-radius: 30px; border: 1px solid var(--border); background: var(--bg-panel); color: var(--text-muted); cursor: pointer; transition: 0.3s; font-weight: 500; }
+        .cat-btn:hover { border-color: var(--border-highlight); color: var(--text-main); }
+        .cat-btn.active { background: var(--text-main); color: var(--text-inverse); border-color: var(--text-main); }
+        
+        .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; overflow-y: auto; padding-right: 5px; padding-bottom: 20px; }
+        .product-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 20px; padding: 16px; cursor: pointer; transition: 0.4s; position: relative; overflow: hidden; display: flex; flex-direction: column; }
+        .product-card::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(180deg, transparent 60%, var(--primary-glow) 100%); opacity: 0; transition: 0.3s; }
+        .product-card:hover { transform: translateY(-6px); border-color: var(--primary); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+        .product-card:hover::before { opacity: 1; }
+        .product-icon-wrapper { height: 120px; background: rgba(150,150,150,0.1); border-radius: 14px; display: flex; justify-content: center; align-items: center; font-size: 3.5rem; margin-bottom: 16px; transition: 0.3s; }
+        .product-card:hover .product-icon-wrapper { transform: scale(1.05); }
+        .product-info h3 { font-size: 1.05rem; font-weight: 600; margin-bottom: 4px; }
+        .product-price { color: var(--primary); font-weight: 700; font-size: 1.1rem; display: flex; justify-content: space-between; align-items: center; }
+        .add-btn { width: 28px; height: 28px; background: rgba(150,150,150,0.1); border-radius: 8px; display: flex; justify-content: center; align-items: center; font-weight: bold; border: 1px solid var(--border); transition: 0.2s; }
+        .product-card:hover .add-btn { background: var(--primary); border-color: var(--primary); color: var(--text-inverse); }
+
+        .cart-sidebar { width: 360px; background: var(--bg-panel); backdrop-filter: var(--glass-blur); border: 1px solid var(--border); border-radius: 24px; display: flex; flex-direction: column; box-shadow: var(--shadow-float); overflow: hidden; transition: 0.4s; }
+        .cart-header { padding: 24px; border-bottom: 1px solid var(--border); }
+        .cart-header h2 { font-size: 1.2rem; font-weight: 700; display: flex; justify-content: space-between; align-items: center; }
+        .cart-count { background: var(--primary); color: var(--text-inverse); font-size: 0.8rem; padding: 2px 8px; border-radius: 20px; }
+        .cart-items { flex: 1; overflow-y: auto; padding: 24px; display: flex; flex-direction: column; gap: 16px; }
+        .cart-item { display: flex; gap: 12px; align-items: center; background: rgba(150,150,150,0.1); padding: 12px; border-radius: 16px; border: 1px solid var(--border); }
+        .item-icon { width: 48px; height: 48px; background: rgba(150,150,150,0.1); border-radius: 10px; display: flex; justify-content: center; align-items: center; font-size: 1.5rem; }
+        .item-details { flex: 1; }
+        .item-details h4 { font-size: 0.95rem; font-weight: 600; }
+        .item-details p { color: var(--primary); font-size: 0.9rem; font-weight: 600; }
+        .item-controls { display: flex; align-items: center; gap: 10px; background: rgba(150,150,150,0.1); border-radius: 8px; padding: 4px; }
+        .ctrl-btn { width: 24px; height: 24px; background: transparent; border: none; color: var(--text-main); cursor: pointer; border-radius: 6px; }
+        .ctrl-btn:hover { background: rgba(150,150,150,0.2); }
+        .cart-summary { padding: 24px; background: rgba(150,150,150,0.05); border-top: 1px solid var(--border); }
+        .summary-row { display: flex; justify-content: space-between; margin-bottom: 12px; color: var(--text-muted); }
+        .summary-total { display: flex; justify-content: space-between; margin-top: 16px; padding-top: 16px; border-top: 1px dashed var(--border-highlight); font-size: 1.2rem; font-weight: 700; }
+        .checkout-btn { width: 100%; background: var(--text-main); color: var(--text-inverse); border: none; padding: 16px; border-radius: 16px; font-weight: 700; margin-top: 20px; cursor: pointer; transition: 0.3s; }
+        .checkout-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
+
+        /* ================= DASHBOARD & LAINNYA ================= */
+        .grid-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+        .stat-card { background: var(--bg-card); padding: 24px; border-radius: 20px; border: 1px solid var(--border); display: flex; flex-direction: column; gap: 10px; transition: 0.4s; }
+        .stat-card h4 { color: var(--text-muted); font-weight: 500; }
+        .stat-card h2 { font-size: 2rem; color: var(--primary); }
+        
+        .mock-chart { height: 300px; background: var(--bg-card); border-radius: 20px; border: 1px solid var(--border); padding: 24px; display: flex; align-items: flex-end; gap: 20px; justify-content: center; position: relative; transition: 0.4s; }
+        .bar { width: 40px; background: linear-gradient(to top, var(--primary-glow), var(--primary)); border-radius: 8px 8px 0 0; animation: barGrow 1s ease-out forwards; transform-origin: bottom; }
+        @keyframes barGrow { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+
+        .profile-header { display: flex; align-items: center; gap: 24px; padding: 30px; background: var(--bg-card); border-radius: 20px; border: 1px solid var(--border); transition: 0.4s; }
+        .avatar { width: 100px; height: 100px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), var(--accent)); display: flex; justify-content: center; align-items: center; font-size: 3rem; font-weight: bold; border: 4px solid var(--bg-panel); color: #fff; }
+        .profile-info h2 { font-size: 1.8rem; margin-bottom: 5px; }
+        .profile-info p { color: var(--primary); font-size: 1.1rem; font-weight: 600; }
+
+        .settings-list { display: flex; flex-direction: column; gap: 16px; }
+        .setting-item { display: flex; justify-content: space-between; align-items: center; padding: 20px; background: var(--bg-card); border-radius: 16px; border: 1px solid var(--border); transition: 0.4s; }
+        
+        /* ================= ANIMASI TOGGLE SWITCH ================= */
+        .toggle-switch { width: 50px; height: 26px; background: rgba(150,150,150,0.3); border-radius: 20px; position: relative; cursor: pointer; transition: background 0.3s; }
+        .toggle-switch::after { content: ''; position: absolute; width: 20px; height: 20px; background: white; border-radius: 50%; top: 3px; left: 3px; transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1); box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        .toggle-switch.active { background: var(--primary); }
+        .toggle-switch.active::after { transform: translateX(24px); }
+
+        /* Toast Notification */
+        .toast { position: fixed; bottom: -60px; left: 50%; transform: translateX(-50%); background: var(--primary); color: #fff; padding: 12px 24px; border-radius: 30px; font-weight: 600; transition: 0.4s; z-index: 1000; opacity: 0; }
+        .toast.show { bottom: 30px; opacity: 1; }
+
+        /* Print Media */
+        #receipt-area { display: none; }
+        @media print {
+            body { background: white; color: black; }
+            .app-container, .toast { display: none !important; }
+            #receipt-area { display: block !important; width: 300px; padding: 10px; font-family: monospace; font-size: 12px; }
+            .r-header { text-align: center; margin-bottom: 15px; border-bottom: 1px dashed black; padding-bottom: 10px; }
+            .r-item { display: flex; justify-content: space-between; margin-bottom: 6px; }
+            .r-divider { border-bottom: 1px dashed black; margin: 10px 0; }
+            .r-total { display: flex; justify-content: space-between; font-weight: bold; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <div class="sidebar">
+            <div class="logo">N</div>
+            <div class="nav-item active" data-tooltip="Kasir POS" onclick="switchView('view-pos', this)">⊞</div>
+            <div class="nav-item" data-tooltip="Dashboard Grafik" onclick="switchView('view-dashboard', this)">📊</div>
+            <div class="nav-item" data-tooltip="Inventaris" onclick="switchView('view-inventory', this)">📦</div>
+            <div class="nav-item mt-auto" data-tooltip="Pengaturan" onclick="switchView('view-settings', this)">⚙️</div>
+            <div class="nav-item" data-tooltip="Profil Sistem" onclick="switchView('view-profile', this)">👤</div>
+        </div>
+
+        <div class="content-area">
+            <div id="view-pos" class="view-section active">
+                <div class="main-area">
+                    <div class="top-header">
+                        <div class="greeting">
+                            <h1>NexPOS Dashboard</h1>
+                            <p id="current-date">Shift Aktif</p>
+                        </div>
+                        <div class="search-bar">
+                            <span>🔍</span>
+                            <input type="text" id="search-input" placeholder="Cari menu..." onkeyup="filterProducts()">
+                        </div>
+                    </div>
+                    <div class="categories">
+                        <button class="cat-btn active" onclick="filterCategory('Semua', this)">Semua Menu</button>
+                        <button class="cat-btn" onclick="filterCategory('Kopi', this)">☕ Coffee</button>
+                        <button class="cat-btn" onclick="filterCategory('Makanan', this)">🍔 Meals</button>
+                    </div>
+                    <div class="product-grid" id="product-list"></div>
+                </div>
+
+                <div class="cart-sidebar">
+                    <div class="cart-header"><h2>Pesanan <span class="cart-count" id="cart-count">0</span></h2></div>
+                    <div class="cart-items" id="cart-list">
+                        <div style="text-align: center; margin-top: 50px; color: var(--text-muted); opacity: 0.5;">🛒<br>Keranjang kosong</div>
+                    </div>
+                    <div class="cart-summary">
+                        <div class="summary-row"><span>Subtotal</span><span id="subtotal">Rp 0</span></div>
+                        <div class="summary-row"><span>Pajak (11%)</span><span id="tax">Rp 0</span></div>
+                        <div class="summary-total"><span>Total</span><span id="total" style="color: var(--primary);">Rp 0</span></div>
+                        <button class="checkout-btn" onclick="printReceipt()">Cetak & Bayar</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="view-dashboard" class="view-section">
+                <div class="generic-view">
+                    <h1 class="view-title">Dashboard Analitik</h1>
+                    <div class="grid-stats">
+                        <div class="stat-card"><h4>Pendapatan Hari Ini</h4><h2>Rp 4.250.000</h2></div>
+                        <div class="stat-card"><h4>Total Transaksi</h4><h2>128</h2></div>
+                        <div class="stat-card"><h4>Menu Terlaris</h4><h2>Caffe Latte</h2></div>
+                    </div>
+                    <h3 style="margin-top: 20px;">Grafik Penjualan Mingguan</h3>
+                    <div class="mock-chart">
+                        <div class="bar" style="height: 40%;"></div><div class="bar" style="height: 60%;"></div>
+                        <div class="bar" style="height: 35%;"></div><div class="bar" style="height: 80%;"></div>
+                        <div class="bar" style="height: 50%;"></div><div class="bar" style="height: 90%;"></div>
+                        <div class="bar" style="height: 75%;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="view-inventory" class="view-section">
+                <div class="generic-view">
+                    <h1 class="view-title">Manajemen Stok</h1>
+                    <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 20px;">
+                        <p style="color: var(--text-muted);">Fitur tabel inventaris dapat dikembangkan lebih lanjut di sini untuk memantau stok bahan baku secara real-time.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="view-settings" class="view-section">
+                <div class="generic-view">
+                    <h1 class="view-title">Pengaturan Sistem</h1>
+                    <div class="settings-list">
+                        <div class="setting-item">
+                            <div>
+                                <h3>Mode Gelap (Dark Mode)</h3>
+                                <p style="color: var(--text-muted); font-size:0.9rem;">Gunakan tema antarmuka gelap yang nyaman di mata</p>
+                            </div>
+                            <div class="toggle-switch active" id="theme-toggle" onclick="toggleTheme()"></div>
+                        </div>
+                        
+                        <div class="setting-item">
+                            <div><h3>Sinkronisasi Cloud</h3><p style="color: var(--text-muted); font-size:0.9rem;">Backup data transaksi secara otomatis</p></div>
+                            <div class="toggle-switch active"></div>
+                        </div>
+                        <div class="setting-item">
+                            <div><h3>Pajak PPN Otomatis</h3><p style="color: var(--text-muted); font-size:0.9rem;">Tetapkan pajak default sebesar 11%</p></div>
+                            <div class="toggle-switch active"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="view-profile" class="view-section">
+                <div class="generic-view">
+                    <h1 class="view-title">Informasi Akun</h1>
+                    <div class="profile-header">
+                        <div class="avatar">A</div>
+                        <div class="profile-info">
+                            <h2>Asiva Nurfarizzi</h2>
+                            <p>Super Administrator / UI/UX Designer</p>
+                            <p style="color: var(--text-muted); margin-top: 10px; font-size: 0.95rem;">Akses penuh ke semua modul sistem termasuk Kasir, Inventaris, dan Laporan Keuangan.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast">Notifikasi</div>
+    <div id="receipt-area">
+        <div class="r-header"><h2>NEXPOS PREMIUM</h2><p>Sistem Kasir Masa Depan</p><p id="receipt-date"></p></div>
+        <div id="receipt-items"></div><div class="r-divider"></div>
+        <div class="r-item"><span>Subtotal</span><span id="r-subtotal"></span></div>
+        <div class="r-item"><span>Pajak (11%)</span><span id="r-tax"></span></div>
+        <div class="r-divider"></div><div class="r-total"><span>TOTAL</span><span id="r-total"></span></div>
+    </div>
+
+    <script>
+        // Set Tanggal
+        document.getElementById('current-date').innerText = new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+        // ================= LOGIKA DARK MODE TEMA =================
+        function toggleTheme() {
+            const htmlElement = document.documentElement;
+            const themeBtn = document.getElementById('theme-toggle');
+            
+            // Mengecek apakah tema saat ini adalah 'light'
+            if (htmlElement.getAttribute('data-theme') === 'light') {
+                // Jika ya, kembalikan ke Dark Mode (hapus atribut)
+                htmlElement.removeAttribute('data-theme');
+                themeBtn.classList.add('active'); // Nyalakan tombol
+            } else {
+                // Jika tidak (berarti sedang Dark Mode), ubah ke Light Mode
+                htmlElement.setAttribute('data-theme', 'light');
+                themeBtn.classList.remove('active'); // Matikan tombol
+            }
+        }
+
+        // ================= LOGIKA NAVIGASI MENU (SPA) =================
+        function switchView(viewId, navElement) {
+            document.querySelectorAll('.view-section').forEach(section => section.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+            document.getElementById(viewId).classList.add('active');
+            navElement.classList.add('active');
+        }
+
+        // ================= LOGIKA KASIR =================
+        const products = [
+            { id: 1, name: "Caffe Latte", price: 28000, icon: "☕", category: "Kopi" },
+            { id: 2, name: "Caramel Macchiato", price: 32000, icon: "🥤", category: "Kopi" },
+            { id: 4, name: "Artisan Croissant", price: 25000, icon: "🥐", category: "Makanan" },
+            { id: 7, name: "Signature Burger", price: 55000, icon: "🍔", category: "Makanan" }
+        ];
+
+        let cart = [];
+        let currentCategory = 'Semua';
+        const formatRp = (num) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(num);
+
+        function renderProducts(searchQuery = "") {
+            const grid = document.getElementById('product-list');
+            grid.innerHTML = '';
+            products.filter(p => (currentCategory === 'Semua' || p.category === currentCategory) && p.name.toLowerCase().includes(searchQuery.toLowerCase()))
+                .forEach(p => {
+                    grid.innerHTML += `<div class="product-card" onclick="addToCart(${p.id})">
+                        <div class="product-icon-wrapper">${p.icon}</div>
+                        <div class="product-info">
+                            <h3>${p.name}</h3><div class="product-price">${formatRp(p.price)}<div class="add-btn">+</div></div>
+                        </div>
+                    </div>`;
+                });
+        }
+
+        function filterCategory(cat, btn) {
+            currentCategory = cat;
+            document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            renderProducts(document.getElementById('search-input').value);
+        }
+
+        function filterProducts() { renderProducts(document.getElementById('search-input').value); }
+
+        function addToCart(id) {
+            const product = products.find(p => p.id === id);
+            const item = cart.find(i => i.id === id);
+            if (item) item.qty++; else cart.push({ ...product, qty: 1 });
+            updateCart(); showToast(`${product.name} ditambahkan!`);
+        }
+
+        function updateQty(id, delta) {
+            const item = cart.find(i => i.id === id);
+            if (item) { item.qty += delta; if (item.qty <= 0) cart = cart.filter(i => i.id !== id); updateCart(); }
+        }
+
+        function updateCart() {
+            const list = document.getElementById('cart-list');
+            document.getElementById('cart-count').innerText = cart.reduce((sum, item) => sum + item.qty, 0);
+            
+            if (cart.length === 0) {
+                list.innerHTML = `<div style="text-align: center; margin-top: 50px; color: var(--text-muted); opacity: 0.5;">🛒<br>Keranjang kosong</div>`;
+                document.getElementById('subtotal').innerText = 'Rp 0'; document.getElementById('tax').innerText = 'Rp 0'; document.getElementById('total').innerText = 'Rp 0'; return;
+            }
+
+            list.innerHTML = ''; let subtotal = 0;
+            cart.forEach(item => {
+                subtotal += item.price * item.qty;
+                list.innerHTML += `<div class="cart-item">
+                    <div class="item-icon">${item.icon}</div>
+                    <div class="item-details"><h4>${item.name}</h4><p>${formatRp(item.price)}</p></div>
+                    <div class="item-controls">
+                        <button class="ctrl-btn" onclick="updateQty(${item.id}, -1)">-</button>
+                        <strong>${item.qty}</strong>
+                        <button class="ctrl-btn" onclick="updateQty(${item.id}, 1)">+</button>
+                    </div></div>`;
+            });
+            const tax = subtotal * 0.11;
+            document.getElementById('subtotal').innerText = formatRp(subtotal);
+            document.getElementById('tax').innerText = formatRp(tax);
+            document.getElementById('total').innerText = formatRp(subtotal + tax);
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast'); t.innerText = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2000);
+        }
+
+        function printReceipt() {
+            if (cart.length === 0) { alert("Tambahkan menu dulu!"); return; }
+            document.getElementById('receipt-date').innerText = new Date().toLocaleString('id-ID');
+            const rItems = document.getElementById('receipt-items'); rItems.innerHTML = '';
+            let subtotal = 0;
+            cart.forEach(item => { const t = item.price * item.qty; subtotal += t; rItems.innerHTML += `<div class="r-item"><span>${item.name} (${item.qty}x)</span><span>${formatRp(t)}</span></div>`; });
+            document.getElementById('r-subtotal').innerText = formatRp(subtotal); document.getElementById('r-tax').innerText = formatRp(subtotal * 0.11); document.getElementById('r-total').innerText = formatRp(subtotal + (subtotal * 0.11));
+            window.print();
+        }
+
+        renderProducts();
+    </script>
+</body>
+</html>
